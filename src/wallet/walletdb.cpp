@@ -351,6 +351,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
              CWalletScanState &wss, string& strType, string& strErr)
 {
     try {
+        CBitcoinAddress addr;
+
         // Unserialize
         // Taking advantage of the fact that pair serialization
         // is just the two items serialized one after the other
@@ -360,12 +362,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             string strAddress;
             ssKey >> strAddress;
             ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].name;
+            std::cerr << "name-" << strAddress << ": " << pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].name << "\n";
         }
         else if (strType == "purpose")
         {
             string strAddress;
             ssKey >> strAddress;
             ssValue >> pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].purpose;
+            std::cerr << "purpose-" << strAddress << ": " << pwallet->mapAddressBook[CBitcoinAddress(strAddress).Get()].name << "\n";
         }
         else if (strType == "tx")
         {
@@ -401,6 +405,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 wss.fAnyUnordered = true;
 
             pwallet->AddToWallet(wtx, true, NULL);
+            std::cerr << "tx-" << hash.ToString() << "\n";
         }
         else if (strType == "acentry")
         {
@@ -418,6 +423,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 if (acentry.nOrderPos == -1)
                     wss.fAnyUnordered = true;
             }
+            std::cerr << "acentry-" << strAccount << "-" << nNumber << "\n";
         }
         else if (strType == "watchs")
         {
@@ -431,6 +437,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             // Watch-only addresses have no birthday information for now,
             // so set the wallet birthday to the beginning of time.
             pwallet->nTimeFirstKey = 1;
+            std::cerr << "watchs-" << /*script <<*/ "-" << fYes << "\n";
         }
         else if (strType == "key" || strType == "wkey")
         {
@@ -465,6 +472,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 ssValue >> hash;
             }
             catch (...) {}
+
+            addr.Set(CPubKey(vchPubKey).GetID());
+            std::cerr << "[w]key-" << addr.ToString() << "\n";
 
             bool fSkipCheck = false;
 
@@ -510,6 +520,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             pwallet->mapMasterKeys[nID] = kMasterKey;
             if (pwallet->nMasterKeyMaxID < nID)
                 pwallet->nMasterKeyMaxID = nID;
+            std::cerr << "mkey-" << nID << /*": " << kMasterKey <<*/ "\n";
         }
         else if (strType == "ckey")
         {
@@ -530,6 +541,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 return false;
             }
             wss.fIsEncrypted = true;
+
+            addr.Set(CPubKey(vchPubKey).GetID());
+            std::cerr << "ckey-" << addr.ToString() << "\n";
         }
         else if (strType == "keymeta")
         {
@@ -538,6 +552,9 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CKeyMetadata keyMeta;
             ssValue >> keyMeta;
             wss.nKeyMeta++;
+
+            addr.Set(CPubKey(vchPubKey).GetID());
+            std::cerr << "keymeta-" << addr.ToString() /*<< ": " << keyMeta*/ << "\n";
 
             pwallet->LoadKeyMetadata(vchPubKey, keyMeta);
 
@@ -549,6 +566,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         else if (strType == "defaultkey")
         {
             ssValue >> pwallet->vchDefaultKey;
+            addr.Set(CPubKey(pwallet->vchDefaultKey).GetID());
+            std::cerr << "defaultkey: " << addr.ToString() << "\n";
         }
         else if (strType == "pool")
         {
@@ -564,12 +583,14 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             CKeyID keyid = keypool.vchPubKey.GetID();
             if (pwallet->mapKeyMetadata.count(keyid) == 0)
                 pwallet->mapKeyMetadata[keyid] = CKeyMetadata(keypool.nTime);
+            std::cerr << "pool-" << nIndex << /*": " << keypool <<*/ "\n";
         }
         else if (strType == "version")
         {
             ssValue >> wss.nFileVersion;
             if (wss.nFileVersion == 10300)
                 wss.nFileVersion = 300;
+            std::cerr << "version: " << wss.nFileVersion << "\n";
         }
         else if (strType == "cscript")
         {
@@ -582,10 +603,12 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error reading wallet database: LoadCScript failed";
                 return false;
             }
+            std::cerr << "cscript-" << hash.ToString() /*<< ": " << script*/ << "\n";
         }
         else if (strType == "orderposnext")
         {
             ssValue >> pwallet->nOrderPosNext;
+            std::cerr << "orderposnext: " << pwallet->nOrderPosNext<< "\n";
         }
         else if (strType == "destdata")
         {
@@ -598,11 +621,13 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 strErr = "Error reading wallet database: LoadDestData failed";
                 return false;
             }
+            std::cerr << "destdata-" << strAddress << "-" << strKey << ": " << strValue << "\n";
         }
         else if (strType == "hdchain")
         {
             CHDChain chain;
             ssValue >> chain;
+            std::cerr << "hdchain: " /*<< chain*/ << "\n";
             if (!pwallet->SetHDChain(chain, true))
             {
                 strErr = "Error reading wallet database: SetHDChain failed";
