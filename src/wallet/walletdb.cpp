@@ -405,7 +405,20 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 wss.fAnyUnordered = true;
 
             pwallet->AddToWallet(wtx, true, NULL);
-            std::cerr << "tx-" << hash.ToString() << "\n";
+            std::cerr << "tx-" << hash.ToString() << " @ " << wtx.nTimeReceived << "/" << wtx.nTimeSmart << "\n";
+            for (const auto& vin: wtx.vin) std::cerr << "\t<-" << vin.ToString() << "\n";
+            for (const auto& vout: wtx.vout) {
+                std::cerr << "\t" << strprintf("%d.%08d", vout.nValue / COIN, vout.nValue % COIN) << " -> ";
+                CKeyID keyId;
+                const unsigned char *script = &vout.scriptPubKey.front();
+                if (*script == 0x21) {
+                    keyId = CPubKey(vout.scriptPubKey.begin() + 1, vout.scriptPubKey.begin() + 34).GetID();
+                } else if (*script == 0x76 && script[1] == 0xa9 && script[2] == 0x14) {
+                    memcpy(keyId.begin(), script + 3, keyId.size());
+		}
+                addr.Set(keyId);
+		std::cerr << addr.ToString() << "\n";
+            }
         }
         else if (strType == "acentry")
         {
