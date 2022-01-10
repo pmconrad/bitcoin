@@ -411,10 +411,15 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 std::cerr << "\t" << strprintf("%d.%08d", vout.nValue / COIN, vout.nValue % COIN) << " -> ";
                 CKeyID keyId;
                 const unsigned char *script = &vout.scriptPubKey.front();
-                if (*script == 0x21) {
-                    keyId = CPubKey(vout.scriptPubKey.begin() + 1, vout.scriptPubKey.begin() + 34).GetID();
+                if (*script == 0x21 || *script == 0x41) {
+                    keyId = CPubKey(vout.scriptPubKey.begin() + 1, vout.scriptPubKey.begin() + 1 + *script).GetID();
                 } else if (*script == 0x76 && script[1] == 0xa9 && script[2] == 0x14) {
                     memcpy(keyId.begin(), script + 3, keyId.size());
+		} else {
+		    std::cerr << "Can't parse script: ";
+		    for (const auto c : vout.scriptPubKey)
+		        std::cerr << strprintf("%02x", c);
+		    std::cerr << " ";
 		}
                 addr.Set(keyId);
 		std::cerr << addr.ToString() << "\n";
