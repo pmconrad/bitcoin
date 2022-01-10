@@ -408,7 +408,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             std::cerr << "tx-" << hash.ToString() << " @ " << wtx.nTimeReceived << "/" << wtx.nTimeSmart << "\n";
             for (const auto& vin: wtx.vin) std::cerr << "\t<-" << vin.ToString() << "\n";
             for (const auto& vout: wtx.vout) {
-                std::cerr << "\t" << strprintf("%d.%08d", vout.nValue / COIN, vout.nValue % COIN) << " -> ";
+                std::cerr << "\t" << strprintf("%d.%06d", vout.nValue / COIN, vout.nValue % COIN) << " -> ";
                 CKeyID keyId;
                 const unsigned char *script = &vout.scriptPubKey.front();
                 if (*script == 0x21 || *script == 0x41) {

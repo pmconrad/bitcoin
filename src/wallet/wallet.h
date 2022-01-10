@@ -194,12 +194,17 @@ public:
 
     template <typename Stream, typename Operation>
     inline void SerializationOp(Stream& s, Operation ser_action, int nType, int nVersion) {
+	    try {
         std::vector<uint256> vMerkleBranch; // For compatibility with older versions.
         READWRITE(*(CTransaction*)this);
         nVersion = this->nVersion;
         READWRITE(hashBlock);
         READWRITE(vMerkleBranch);
         READWRITE(nIndex);
+	    } catch (const std::exception& e) {
+		    std::cerr << e.what() << "\n";
+		    throw;
+	    }
     }
 
     int SetMerkleBranch(const CBlock& block);
