@@ -738,7 +738,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     // Any wallet corruption at all: skip any rewriting or
     // upgrading, we don't want to make it worse.
-    if (result != DB_LOAD_OK)
+    if (result != DB_LOAD_OK || GetBoolArg("-dump-only", false))
         return result;
 
     LogPrintf("nFileVersion = %d\n", wss.nFileVersion);
